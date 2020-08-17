@@ -30,25 +30,13 @@ namespace blugin\api\paymentpool;
 use pocketmine\plugin\PluginBase;
 
 class PaymentPool extends PluginBase{
-    /** @var PaymentPool|null */
-    private static $instance = null;
-
-    /** @return PaymentPool|null */
-    public static function getInstance() : ?PaymentPool{
-        return self::$instance;
-    }
-
     /** @var IPaymentProvider[] name => economy provider */
-    private $providers = [];
-    private $default = null;
-
-    public function onLoad(){
-        self::$instance = $this;
-    }
+    private static $providers = [];
+    private static $default = null;
 
     /** @return IPaymentProvider[] */
-    public function getProviders() : array{
-        return $this->providers;
+    public static function getProviders() : array{
+        return self::$providers;
     }
 
     /**
@@ -56,26 +44,26 @@ class PaymentPool extends PluginBase{
      *
      * @return IPaymentProvider|null
      */
-    public function getProvider(?string $uniqueName = null) : ?IPaymentProvider{
+    public static function getProvider(?string $uniqueName = null) : ?IPaymentProvider{
         if($uniqueName === null){
-            $uniqueName = $this->default === null ? array_key_first($this->providers) : $this->default;
+            $uniqueName = self::$default === null ? array_key_first(self::$providers) : self::$default;
         }
 
-        return $this->providers[strtolower($uniqueName)] ?? null;
+        return self::$providers[strtolower($uniqueName)] ?? null;
     }
 
     /**
      * @param IPaymentProvider $provider
      * @param string[]         $saveNames
      */
-    public function registerProvider(IPaymentProvider $provider, array $saveNames = []) : void{
-        if($this->default === null){
-            $this->default = $provider->getName();
+    public static function registerProvider(IPaymentProvider $provider, array $saveNames = []) : void{
+        if(self::$default === null){
+            self::$default = $provider->getName();
         }
 
         $saveNames[] = $provider->getName();
         foreach($saveNames as $name){
-            $this->providers[strtolower($name)] = $provider;
+            self::$providers[strtolower($name)] = $provider;
         }
     }
 }
