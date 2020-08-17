@@ -49,6 +49,14 @@ interface IPaymentProvider{
 
     /**
      * @param Player|string $player
+     * @param float         $value init value
+     *
+     * @return bool If player's data was created
+     */
+    public function create($player, float $value) : bool;
+
+    /**
+     * @param Player|string $player
      *
      * @return float|null If player's data was exists return null, else return player's money
      */
