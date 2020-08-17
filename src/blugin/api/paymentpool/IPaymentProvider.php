@@ -56,23 +56,23 @@ interface IPaymentProvider{
 
     /**
      * @param Player|string $player
-     * @param float         $money
+     * @param float         $value
      */
-    public function set($player, float $money) : void;
+    public function set($player, float $value) : void;
 
     /**
      * @param Player|string $player
-     * @param float         $money
+     * @param float         $value
      *
      * @return float|null If player's data was exists return null, else return result money
      */
-    public function increase($player, float $money) : ?float;
+    public function increase($player, float $value) : ?float;
 
     /**
      * @param Player|string $player
-     * @param float         $money
+     * @param float         $value
      *
      * @return float|null If player's data was exists return null, else return result money
      */
-    public function decrease($player, float $money) : ?float;
+    public function decrease($player, float $value) : ?float;
 }
