@@ -61,7 +61,7 @@ class PaymentPool extends PluginBase{
             $uniqueName = $this->default === null ? array_key_first($this->providers) : $this->default;
         }
 
-        return $this->providers[$uniqueName !== null] ?? null;
+        return $this->providers[strtolower($uniqueName)] ?? null;
     }
 
     /**
@@ -75,7 +75,7 @@ class PaymentPool extends PluginBase{
 
         $saveNames[] = $provider->getName();
         foreach($saveNames as $name){
-            $this->providers[$name] = $provider;
+            $this->providers[strtolower($name)] = $provider;
         }
     }
 }
