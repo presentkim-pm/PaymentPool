@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace blugin\api\paymentpool;
 
+use pocketmine\plugin\Plugin;
 use pocketmine\plugin\PluginBase;
 
 class PaymentPool extends PluginBase{
@@ -36,22 +37,60 @@ class PaymentPool extends PluginBase{
     /** @var string|null */
     private static $default = null;
 
+    /** @var PluginInfo[] plugin name => plugin info */
+    private static $infos = [];
+
     /** @return IPaymentProvider[] */
     public static function getProviders() : array{
         return self::$providers;
     }
 
+    public function onEnable() : void{
+        //Load plugin info data
+        $filePath = "{$this->getDataFolder()}infos.json";
+        if(!file_exists($filePath))
+            return;
+
+        $content = file_get_contents($filePath);
+        if($content === false)
+            throw new \RuntimeException("Unable to find infos.json file");
+
+        $infoData = json_decode($content, true);
+        if(!is_array($infoData))
+            throw new \RuntimeException("Unable to decode infos.json file");
+
+        $infos = [];
+        foreach(json_decode($content, true) as $value){
+            $info = PluginInfo::jsonDeserialize($value);
+            if($info === null)
+                throw new \RuntimeException("Unable to load infos.json file");
+
+            $infos[$info->getName()] = $info;
+        }
+        self::$infos = $infos;
+    }
+
+    public function onDisable() : void{
+        //Save plugin info data
+        if(!empty(self::$infos)){
+            $filePath = "{$this->getDataFolder()}infos.json";
+            file_put_contents($filePath, json_encode(self::$infos, JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
+            self::$infos = [];
+        }
+    }
+
     /**
-     * @param string|null $uniqueName If it was null, return default provider
+     * @param Plugin|string|null $option If it was null, return default provider
      *
      * @return IPaymentProvider|null
      */
-    public static function getProvider(?string $uniqueName = null) : ?IPaymentProvider{
-        if($uniqueName === null){
-            $uniqueName = self::$default === null ? array_key_first(self::$providers) : self::$default;
+    public static function getProvider($option = null) : ?IPaymentProvider{
+        $providerName = null;
+        if($option instanceof Plugin && isset(self::$infos[$option->getName()])){
+            $providerName = self::$infos[$option->getName()]->getDefault();
         }
 
-        return self::$providers[strtolower($uniqueName)] ?? null;
+        return self::$providers[strtolower($providerName ?? self::getDefault())] ?? null;
     }
 
     /**
@@ -67,6 +106,32 @@ class PaymentPool extends PluginBase{
         foreach($saveNames as $name){
             self::$providers[strtolower($name)] = $provider;
         }
+    }
+
+    /** @return string[] */
+    public static function getInfos() : array{
+        return self::$infos;
+    }
+
+    /** @param Plugin $plugin */
+    public static function registerPlugin(Plugin $plugin) : void{
+        $id = spl_object_id($plugin);
+        if(!isset(self::$infos[$id])){
+            self::$infos[$plugin->getName()] = new PluginInfo($plugin->getName(), self::getDefault());
+        }
+    }
+
+    /**
+     * @param $plugin
+     *
+     * @return PluginInfo|null
+     */
+    public static function getPluginInfo($plugin) : ?PluginInfo{
+        if($plugin instanceof Plugin){
+            $plugin = $plugin->getName();
+        }
+
+        return self::$infos[$plugin] ?? null;
     }
 
     /** @return string|null */
