@@ -167,11 +167,6 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         }
     }
 
-    /** @return string[] */
-    public static function getInfos() : array{
-        return self::$infos;
-    }
-
     /** @param Plugin $plugin */
     public static function registerPlugin(Plugin $plugin) : void{
         if(!isset(self::$infos[$plugin->getName()])){
