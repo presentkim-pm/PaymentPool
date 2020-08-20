@@ -30,7 +30,6 @@ namespace blugin\api\paymentpool\command;
 use blugin\api\paymentpool\PaymentPool;
 use blugin\lib\command\Subcommand;
 use pocketmine\command\CommandSender;
-use pocketmine\Server;
 
 class DefaultSubcommand extends Subcommand{
     /** @return string */
@@ -50,7 +49,7 @@ class DefaultSubcommand extends Subcommand{
 
         $provider = PaymentPool::getProvider($args[0], false);
         if($provider === null){
-            $sender->sendMessage(Server::getInstance()->getLanguage()->translateString("commands.generic.invalidPayment", [$args[0]]));
+            $sender->sendMessage($this->getMainCommand()->getMessage($sender, "commands.generic.invalidPayment", [$args[0]]));
             return true;
         }
 
