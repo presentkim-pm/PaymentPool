@@ -53,7 +53,7 @@ class SetSubcommand extends Subcommand{
             return true;
         }
 
-        $provider = PaymentPool::getProvider($args[1], false);
+        $provider = PaymentPool::get($args[1], false);
         if($provider === null){
             $sender->sendMessage($this->getMainCommand()->getMessage($sender, "commands.generic.invalidPayment", [$args[1]]));
             return true;

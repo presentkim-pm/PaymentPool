@@ -131,7 +131,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
      *
      * @return IPaymentProvider|null
      */
-    public static function getProvider($option = null, bool $default = true) : ?IPaymentProvider{
+    public static function get($option = null, bool $default = true) : ?IPaymentProvider{
         $providerName = null;
         if($option instanceof Plugin && isset(self::$infos[$option->getName()])){
             $providerName = self::$infos[$option->getName()]->getDefault();
@@ -156,7 +156,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
      * @param IPaymentProvider $provider
      * @param string[]         $saveNames
      */
-    public static function registerProvider(IPaymentProvider $provider, array $saveNames = []) : void{
+    public static function register(IPaymentProvider $provider, array $saveNames = []) : void{
         if(self::$default === null){
             self::$default = $provider->getName();
         }
@@ -167,15 +167,8 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         }
     }
 
-    /** @param Plugin $plugin */
-    public static function registerPlugin(Plugin $plugin) : void{
-        if(!isset(self::$infos[$plugin->getName()])){
-            self::$infos[$plugin->getName()] = new PluginInfo($plugin->getName(), self::getDefault());
-        }
-    }
-
     /**
-     * @param $plugin
+     * @param Plugin|string $plugin
      *
      * @return PluginInfo|null
      */
@@ -185,6 +178,17 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         }
 
         return self::$infos[$plugin] ?? null;
+    }
+
+    /** @param Plugin|string $plugin */
+    public static function createPluginInfo($plugin) : void{
+        if($plugin instanceof Plugin){
+            $plugin = $plugin->getName();
+        }
+
+        if(!isset(self::$infos[$plugin])){
+            self::$infos[$plugin] = new PluginInfo($plugin, self::getDefault());
+        }
     }
 
     /** @return PluginInfo[] */
