@@ -118,8 +118,7 @@ class PaymentPool extends PluginBase{
 
     /** @param Plugin $plugin */
     public static function registerPlugin(Plugin $plugin) : void{
-        $id = spl_object_id($plugin);
-        if(!isset(self::$infos[$id])){
+        if(!isset(self::$infos[$plugin->getName()])){
             self::$infos[$plugin->getName()] = new PluginInfo($plugin->getName(), self::getDefault());
         }
     }
