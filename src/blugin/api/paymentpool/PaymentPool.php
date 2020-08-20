@@ -82,34 +82,24 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
             throw new \RuntimeException("Unable to find data.json file");
 
         $data = json_decode($content, true);
-        if(!is_array($data))
+        if(!is_array($data) || !is_string($data["default"] ?? null) || !is_array($data["infos"] ?? null))
             throw new \RuntimeException("Unable to decode data.json file");
 
-        if(isset($data["default"])){
-            if(!is_string($data["default"]))
-                throw new \RuntimeException("[data.json] \"default\" must be string, " . gettype($data["default"]) . " given.");
-
-            $default = self::$providers[strtolower($data["default"])] ?? self::$providerSaveNames[strtolower($data["default"])] ?? null;
-            if($default === null)
-                throw new \RuntimeException("[data.json] Unalbe to load default payment setting. (Invalid: " . $data["default"] . ")");
-
+        $default = self::$providers[strtolower($data["default"])] ?? self::$providerSaveNames[strtolower($data["default"])] ?? null;
+        if($default !== null){
             self::setDefault($default->getName());
         }
-        if(isset($data["infos"])){
-            if(!is_array($data["infos"]))
-                throw new \RuntimeException("[data.json] \"info\" must be array, " . gettype($data["default"]) . " given.");
 
-            $infos = [];
-            foreach($data["infos"] as $infoData){
-                try{
-                    $info = PluginInfo::jsonDeserialize($infoData);
-                    $infos[$info->getName()] = $info;
-                }catch(\Exception $e){
-                    throw new \RuntimeException("[data.json] Unable to parse info data");
-                }
+        $infos = [];
+        foreach($data["infos"] as $infoData){
+            try{
+                $info = PluginInfo::jsonDeserialize($infoData);
+                $infos[$info->getName()] = $info;
+            }catch(\Exception $e){
+                throw new \RuntimeException("[data.json] Unable to parse info data");
             }
-            self::$infos = $infos;
         }
+        self::$infos = $infos;
     }
 
     public function onDisable() : void{
