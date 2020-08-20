@@ -33,6 +33,8 @@ use pocketmine\plugin\PluginBase;
 class PaymentPool extends PluginBase{
     /** @var IPaymentProvider[] name => economy provider */
     private static $providers = [];
+    /** @var IPaymentProvider[] save name => economy provider */
+    private static $providerSaveNames = [];
 
     /** @var string|null */
     private static $default = null;
@@ -90,7 +92,8 @@ class PaymentPool extends PluginBase{
             $providerName = self::$infos[$option->getName()]->getDefault();
         }
 
-        return self::$providers[strtolower($providerName ?? self::getDefault())] ?? null;
+        $providerName = strtolower($providerName ?? "");
+        return self::$providers[$providerName] ?? self::$providerSaveNames[$providerName] ?? self::$providers[strtolower(self::getDefault())] ?? null;
     }
 
     /**
@@ -102,9 +105,9 @@ class PaymentPool extends PluginBase{
             self::$default = $provider->getName();
         }
 
-        $saveNames[] = $provider->getName();
+        self::$providers[strtolower($provider->getName())] = $provider;
         foreach($saveNames as $name){
-            self::$providers[strtolower($name)] = $provider;
+            self::$providerSaveNames[strtolower($name)] = $provider;
         }
     }
 
