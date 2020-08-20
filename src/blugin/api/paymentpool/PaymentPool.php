@@ -85,7 +85,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         if(!is_array($data) || !is_string($data["default"] ?? null) || !is_array($data["infos"] ?? null))
             throw new \RuntimeException("Unable to decode data.json file");
 
-        $default = self::$providers[strtolower($data["default"])] ?? self::$providerSaveNames[strtolower($data["default"])] ?? null;
+        $default = self::get($data["default"]);
         if($default !== null){
             self::setDefault($default->getName());
         }
