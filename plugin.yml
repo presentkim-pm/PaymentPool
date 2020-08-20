@@ -5,5 +5,24 @@ version: 1.0.0
 api: [3.0.0]
 authors: ['Blugin-team', 'PresentKim']
 description: '[API] API plugin that registers and manages several payment plugins'
+depend: ['libTranslator', 'libSubcommands']
 load: STARTUP
+
+permissions:
+  payment.cmd:
+    description: PaymentPool command
+    default: op
+    children:
+      payment.cmd.default:
+        description: PaymentPool command - default
+        default: op
+      payment.cmd.set:
+        description: PaymentPool command - set
+        default: op
+      payment.cmd.plugins:
+        description: PaymentPool command - plugins
+        default: op
+      payment.cmd.list:
+        description: PaymentPool command - list
+        default: op
 ...

@@ -1,0 +1,36 @@
+# Advanced configuration file for PaymentPool plugin
+# Some of these settings are safe, others can break your server if modified incorrectly
+# New settings/defaults won't appear automatically on this file when upgrading
+
+command:
+  #Name of main command
+  #You can change this to be what you want
+  name: "payment"
+
+  #Permission of main command
+  #You can change this to be what you want
+  permission: "op"
+
+  #Aliases of main command
+  #You can add, replace, or remove them as you like
+  aliases: ["paymentpool", "pay"]
+
+  children:
+    #Setting of subcommands
+    #Same as main command setting
+    default:
+      name: "Default"
+      aliases: ["d", "def"]
+      permission: "op"
+    set:
+      name: "Set"
+      aliases: ["s"]
+      permission: "op"
+    plugins:
+      name: "Plugins"
+      aliases: ["p", "pluginlist"]
+      permission: "op"
+    list:
+      name: "List"
+      aliases: ["l"]
+      permission: "op"

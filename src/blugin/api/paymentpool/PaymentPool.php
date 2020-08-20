@@ -27,10 +27,20 @@ declare(strict_types=1);
 
 namespace blugin\api\paymentpool;
 
+use blugin\api\paymentpool\command\DefaultSubcommand;
+use blugin\api\paymentpool\command\ListSubcommand;
+use blugin\api\paymentpool\command\PluginsSubcommand;
+use blugin\api\paymentpool\command\SetSubcommand;
+use blugin\lib\command\SubcommandTrait;
+use blugin\lib\translator\MultilingualConfigTrait;
+use blugin\lib\translator\TranslatorHolder;
+use blugin\lib\translator\TranslatorHolderTrait;
 use pocketmine\plugin\Plugin;
 use pocketmine\plugin\PluginBase;
 
-class PaymentPool extends PluginBase{
+class PaymentPool extends PluginBase implements TranslatorHolder{
+    use TranslatorHolderTrait, MultilingualConfigTrait, SubcommandTrait;
+
     /** @var IPaymentProvider[] name => economy provider */
     private static $providers = [];
     /** @var IPaymentProvider[] save name => economy provider */
@@ -47,7 +57,21 @@ class PaymentPool extends PluginBase{
         return self::$providers;
     }
 
+    public function onLoad(){
+        $this->loadLanguage($this->getConfig()->getNested("settings.language"));
+        $this->getMainCommand("payment");
+    }
+
     public function onEnable() : void{
+        //Register main command with subcommands
+        $command = $this->getMainCommand("payment");
+        $command->registerSubcommand(new DefaultSubcommand($command));
+        $command->registerSubcommand(new SetSubcommand($command));
+        $command->registerSubcommand(new ListSubcommand($command));
+        $command->registerSubcommand(new PluginsSubcommand($command));
+        $this->recalculatePermissions();
+        $this->getServer()->getCommandMap()->register($this->getName(), $command);
+
         //Load plugin info data
         $filePath = "{$this->getDataFolder()}infos.json";
         if(!file_exists($filePath))
@@ -73,6 +97,9 @@ class PaymentPool extends PluginBase{
     }
 
     public function onDisable() : void{
+        //Unregister main command with subcommands
+        $this->getServer()->getCommandMap()->unregister($this->getMainCommand("payment"));
+
         //Save plugin info data
         if(!empty(self::$infos)){
             $filePath = "{$this->getDataFolder()}infos.json";
