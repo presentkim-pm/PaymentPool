@@ -47,13 +47,13 @@ class SetSubcommand extends Subcommand{
         if(empty($args[0]) || empty($args[1]))
             return false;
 
-        $pluginInfo = PaymentPool::getPluginInfo($args[0], false);
+        $pluginInfo = PaymentPool::getPluginInfo($args[0]);
         if($pluginInfo === null){
             $sender->sendMessage($this->getMainCommand()->getMessage($sender, "commands.generic.invalidPlugin", [$args[0]]));
             return true;
         }
 
-        $provider = PaymentPool::getProvider($args[1]);
+        $provider = PaymentPool::getProvider($args[1], false);
         if($provider === null){
             $sender->sendMessage($this->getMainCommand()->getMessage($sender, "commands.generic.invalidPayment", [$args[1]]));
             return true;
