@@ -134,6 +134,11 @@ class PaymentPool extends PluginBase{
         return self::$infos[$plugin] ?? null;
     }
 
+    /** @return PluginInfo[] */
+    public static function getPluginInfos() : array{
+        return self::$infos;
+    }
+
     /** @return string|null */
     public static function getDefault() : ?string{
         return self::$default ?? (empty(self::$providers) ? null : array_key_first(self::$providers));
