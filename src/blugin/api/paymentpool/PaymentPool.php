@@ -144,7 +144,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         }
 
         $providerName = strtolower($providerName ?? "");
-        $provider = self::$providers[$providerName] ?? self::$providerSaveNames[$providerName];
+        $provider = self::$providers[$providerName] ?? self::$providerSaveNames[$providerName] ?? null;
         if($provider !== null && $default){
             $provider = self::$providers[strtolower(self::getDefault())] ?? null;
         }
