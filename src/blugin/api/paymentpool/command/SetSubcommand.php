@@ -48,7 +48,7 @@ class SetSubcommand extends Subcommand{
         if(empty($args[0]) || empty($args[1]))
             return false;
 
-        $pluginInfo = PaymentPool::getPluginInfo($args[0]);
+        $pluginInfo = PaymentPool::getPluginInfo($args[0], false);
         if($pluginInfo === null){
             $sender->sendMessage(Server::getInstance()->getLanguage()->translateString("commands.generic.invalidPlugin", [$args[0]]));
             return true;

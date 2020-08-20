@@ -48,7 +48,7 @@ class DefaultSubcommand extends Subcommand{
         if(empty($args[0]))
             return false;
 
-        $provider = PaymentPool::getProvider($args[0]);
+        $provider = PaymentPool::getProvider($args[0], false);
         if($provider === null){
             $sender->sendMessage(Server::getInstance()->getLanguage()->translateString("commands.generic.invalidPayment", [$args[0]]));
             return true;
