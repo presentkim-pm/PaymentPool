@@ -73,27 +73,43 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         $this->getServer()->getCommandMap()->register($this->getName(), $command);
 
         //Load plugin info data
-        $filePath = "{$this->getDataFolder()}infos.json";
+        $filePath = "{$this->getDataFolder()}data.json";
         if(!file_exists($filePath))
             return;
 
         $content = file_get_contents($filePath);
         if($content === false)
-            throw new \RuntimeException("Unable to find infos.json file");
+            throw new \RuntimeException("Unable to find data.json file");
 
-        $infoData = json_decode($content, true);
-        if(!is_array($infoData))
-            throw new \RuntimeException("Unable to decode infos.json file");
+        $data = json_decode($content, true);
+        if(!is_array($data))
+            throw new \RuntimeException("Unable to decode data.json file");
 
-        $infos = [];
-        foreach(json_decode($content, true) as $value){
-            $info = PluginInfo::jsonDeserialize($value);
-            if($info === null)
-                throw new \RuntimeException("Unable to load infos.json file");
+        if(isset($data["default"])){
+            if(!is_string($data["default"]))
+                throw new \RuntimeException("[data.json] \"default\" must be string, " . gettype($data["default"]) . " given.");
 
-            $infos[$info->getName()] = $info;
+            $default = self::$providers[strtolower($data["default"])] ?? self::$providerSaveNames[strtolower($data["default"])] ?? null;
+            if($default === null)
+                throw new \RuntimeException("[data.json] Unalbe to load default payment setting. (Invalid: " . $data["default"] . ")");
+
+            self::setDefault($default->getName());
         }
-        self::$infos = $infos;
+        if(isset($data["infos"])){
+            if(!is_array($data["infos"]))
+                throw new \RuntimeException("[data.json] \"info\" must be array, " . gettype($data["default"]) . " given.");
+
+            $infos = [];
+            foreach($data["infos"] as $infoData){
+                try{
+                    $info = PluginInfo::jsonDeserialize($infoData);
+                    $infos[$info->getName()] = $info;
+                }catch(\Exception $e){
+                    throw new \RuntimeException("[data.json] Unable to parse info data");
+                }
+            }
+            self::$infos = $infos;
+        }
     }
 
     public function onDisable() : void{
@@ -101,11 +117,12 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         $this->getServer()->getCommandMap()->unregister($this->getMainCommand("payment"));
 
         //Save plugin info data
-        if(!empty(self::$infos)){
-            $filePath = "{$this->getDataFolder()}infos.json";
-            file_put_contents($filePath, json_encode(self::$infos, JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
-            self::$infos = [];
-        }
+        $filePath = "{$this->getDataFolder()}data.json";
+        file_put_contents($filePath, json_encode([
+            "default" => self::getDefault(),
+            "infos" => self::$infos
+        ], JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
+        self::$infos = [];
     }
 
     /**

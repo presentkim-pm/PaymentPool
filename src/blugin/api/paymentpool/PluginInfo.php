@@ -86,6 +86,6 @@ class PluginInfo implements \JsonSerializable{
         if(!isset($data["name"]) || !isset($data["default"]))
             return null;
 
-        return new PluginInfo($data["name"], $data["default"]);
+        return new PluginInfo((string) $data["name"], (string) $data["default"]);
     }
 }
