@@ -41,25 +41,39 @@ use pocketmine\plugin\PluginBase;
 class PaymentPool extends PluginBase implements TranslatorHolder{
     use TranslatorHolderTrait, MultilingualConfigTrait, SubcommandTrait;
 
-    /** @var IPaymentProvider[] name => economy provider */
-    private static $providers = [];
+    public const ENUM_PROVIDERS = "Payment";
+    public const ENUM_PLUGININFOS = "PaymentPlugin";
+
+    /** @var Enum name => IPaymentProvider */
+    private static $providerEnum;
     /** @var IPaymentProvider[] save name => economy provider */
     private static $providerSaveNames = [];
 
     /** @var string|null */
     private static $default = null;
 
-    /** @var PluginInfo[] plugin name => plugin info */
-    private static $infos = [];
+    /** @var Enum name => PluginInfo */
+    private static $pluginInfoEnum;
 
-    /** @return IPaymentProvider[] */
+    /** @return IPaymentProvider[] name => provider */
     public static function getProviders() : array{
-        return self::$providers;
+        return self::$providerEnum->getAll();
+    }
+
+    public static function getProviderEnum() : Enum{
+        return self::$providerEnum;
+    }
+
+    public static function getPluginInfoEnum() : Enum{
+        return self::$pluginInfoEnum;
     }
 
     public function onLoad(){
         $this->loadLanguage($this->getConfig()->getNested("settings.language"));
         $this->getMainCommand("payment");
+        self::$providerEnum = EnumFactory::getInstance()->set(self::ENUM_PROVIDERS);
+        self::$pluginInfoEnum = EnumFactory::getInstance()->set(self::ENUM_PLUGININFOS);
+
     }
 
     public function onEnable() : void{
@@ -99,7 +113,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
                 throw new \RuntimeException("[data.json] Unable to parse info data");
             }
         }
-        self::$infos = $infos;
+        self::$pluginInfoEnum->setAll($infos);
     }
 
     public function onDisable() : void{
@@ -110,9 +124,9 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         $filePath = "{$this->getDataFolder()}data.json";
         file_put_contents($filePath, json_encode([
             "default" => self::getDefault(),
-            "infos" => self::$infos
+            "infos" => self::$pluginInfoEnum
         ], JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
-        self::$infos = [];
+        self::$pluginInfoEnum->setAll([]);
     }
 
     /**
@@ -123,20 +137,20 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
      */
     public static function get($option = null, bool $default = true) : ?IPaymentProvider{
         $providerName = null;
-        if($option instanceof Plugin && isset(self::$infos[$option->getName()])){
-            $providerName = self::$infos[$option->getName()]->getDefault();
+        if($option instanceof Plugin && isset(self::$pluginInfoEnum[$option->getName()])){
+            $providerName = self::$pluginInfoEnum[$option->getName()]->getDefault();
         }elseif(is_string($option)){
-            if(isset(self::$infos[$option])){
-                $providerName = self::$infos[$option]->getDefault();
+            if(self::$pluginInfoEnum->has($option)){
+                $providerName = self::$pluginInfoEnum->get($option)->getDefault();
             }else{
                 $providerName = $option;
             }
         }
 
         $providerName = strtolower($providerName ?? "");
-        $provider = self::$providers[$providerName] ?? self::$providerSaveNames[$providerName] ?? null;
+        $provider = self::$providerEnum->get($providerName) ?? self::$providerSaveNames[$providerName] ?? null;
         if($provider !== null && $default){
-            $provider = self::$providers[strtolower(self::getDefault())] ?? null;
+            $provider = self::$providerEnum->get(strtolower(self::getDefault())) ?? null;
         }
 
         return $provider;
@@ -151,7 +165,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
             self::$default = $provider->getName();
         }
 
-        self::$providers[strtolower($provider->getName())] = $provider;
+        self::$providerEnum->set(strtolower($provider->getName()), $provider);
         foreach($saveNames as $name){
             self::$providerSaveNames[strtolower($name)] = $provider;
         }
@@ -167,7 +181,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
             $plugin = $plugin->getName();
         }
 
-        return self::$infos[$plugin] ?? null;
+        return self::$pluginInfoEnum[$plugin] ?? null;
     }
 
     /** @param Plugin|string $plugin */
@@ -176,19 +190,20 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
             $plugin = $plugin->getName();
         }
 
-        if(!isset(self::$infos[$plugin])){
-            self::$infos[$plugin] = new PluginInfo($plugin, self::getDefault());
+        if(self::$pluginInfoEnum->has($plugin)){
+            self::$pluginInfoEnum->set($plugin, new PluginInfo($plugin, self::getDefault()));
         }
     }
 
     /** @return PluginInfo[] */
     public static function getPluginInfos() : array{
-        return self::$infos;
+        return self::$pluginInfoEnum->getAll();
     }
 
     /** @return string|null */
     public static function getDefault() : ?string{
-        return self::$default ?? (empty(self::$providers) ? null : array_key_first(self::$providers));
+        $providers = self::getProviders();
+        return self::$default ?? (empty($providers) ? null : array_key_first($providers));
     }
 
     /** @param string|null $default */
