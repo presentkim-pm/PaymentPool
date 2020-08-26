@@ -2,7 +2,7 @@
 # Some of these settings are safe, others can break your server if modified incorrectly
 # New settings/defaults won't appear automatically on this file when upgrading
 
-command:
+payment:
   #Name of main command
   #You can change this to be what you want
   name: "payment"
@@ -22,15 +22,29 @@ command:
       name: "Default"
       aliases: ["d", "def"]
       permission: "op"
+      children:
+        payment:
+          name: "Payment"
     set:
       name: "Set"
       aliases: ["s"]
       permission: "op"
+      children:
+        payment:
+          name: "Payment"
+        plugin:
+          name: "Plugin"
     plugins:
       name: "Plugins"
       aliases: ["p", "pluginlist"]
       permission: "op"
+      children:
+        page:
+          name: "Page"
     list:
       name: "List"
       aliases: ["l"]
       permission: "op"
+      children:
+        page:
+          name: "Page"
