@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace blugin\api\paymentpool;
 
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 interface IPaymentProvider{
     /**
