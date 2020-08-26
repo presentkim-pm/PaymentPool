@@ -27,19 +27,22 @@ declare(strict_types=1);
 
 namespace blugin\api\paymentpool;
 
-use blugin\api\paymentpool\command\DefaultSubcommand;
-use blugin\api\paymentpool\command\ListSubcommand;
-use blugin\api\paymentpool\command\PluginsSubcommand;
-use blugin\api\paymentpool\command\SetSubcommand;
-use blugin\lib\command\SubcommandTrait;
-use blugin\lib\translator\MultilingualConfigTrait;
-use blugin\lib\translator\TranslatorHolder;
-use blugin\lib\translator\TranslatorHolderTrait;
+use blugin\api\paymentpool\command\parameter\PaymentParameter;
+use blugin\api\paymentpool\command\parameter\PluginInfoParameter;
+use blugin\lib\command\BaseCommand;
+use blugin\lib\command\BaseCommandTrait;
+use blugin\lib\command\enum\Enum;
+use blugin\lib\command\enum\EnumFactory;
+use blugin\lib\command\overload\Overload;
+use blugin\lib\command\parameter\defaults\IntegerParameter;
+use blugin\lib\command\translator\traits\TranslatorHolderTrait;
+use blugin\lib\command\translator\TranslatorHolder;
+use pocketmine\command\CommandSender;
 use pocketmine\plugin\Plugin;
 use pocketmine\plugin\PluginBase;
 
 class PaymentPool extends PluginBase implements TranslatorHolder{
-    use TranslatorHolderTrait, MultilingualConfigTrait, SubcommandTrait;
+    use TranslatorHolderTrait, BaseCommandTrait;
 
     public const ENUM_PROVIDERS = "Payment";
     public const ENUM_PLUGININFOS = "PaymentPlugin";
@@ -69,21 +72,78 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
     }
 
     public function onLoad(){
-        $this->loadLanguage($this->getConfig()->getNested("settings.language"));
-        $this->getMainCommand("payment");
         self::$providerEnum = EnumFactory::getInstance()->set(self::ENUM_PROVIDERS);
         self::$pluginInfoEnum = EnumFactory::getInstance()->set(self::ENUM_PLUGININFOS);
 
+        $this->loadLanguage();
+        $this->getBaseCommand("payment");
     }
 
     public function onEnable() : void{
         //Register main command with subcommands
-        $command = $this->getMainCommand("payment");
-        $command->registerSubcommand(new DefaultSubcommand($command));
-        $command->registerSubcommand(new SetSubcommand($command));
-        $command->registerSubcommand(new ListSubcommand($command));
-        $command->registerSubcommand(new PluginsSubcommand($command));
-        $this->recalculatePermissions();
+        $command = $this->getBaseCommand("payment");
+        $command->addNamedOverload("default")
+            ->addParamater(new PaymentParameter("payment"))
+            ->setHandler(function(CommandSender $sender, array $args, Overload $overload) : bool{
+                $default = $args["payment"]->getName();
+                PaymentPool::setDefault($default);
+                $overload->sendMessage($sender, "success", [$default]);
+                return true;
+            });
+        $command->addNamedOverload("set")
+            ->addParamater(new PluginInfoParameter("plugin"))
+            ->addParamater(new PaymentParameter("payment"))
+            ->setHandler(function(CommandSender $sender, array $args, Overload $overload) : bool{
+                $default = $args["payment"]->getName();
+                $args["plugin"]->setDefault($default);
+                $overload->sendMessage($sender, "success", [$default]);
+                return true;
+            });
+        $command->addNamedOverload("list")
+            ->addParamater((new IntegerParameter("page"))->setMin(1)->setOptional(true))
+            ->setHandler(function(CommandSender $sender, array $args, Overload $overload) : bool{
+                $providers = PaymentPool::getProviders();
+                if(empty($providers)){
+                    $overload->sendMessage($sender, "failure.empty");
+                    return true;
+                }
+
+                $list = array_chunk($providers, $sender->getScreenLineHeight());
+                $page = min($args["page"], count($list));
+
+                $overload->sendMessage($sender, "head", [$page, count($list)]);
+                if(isset($list[$page - 1])){
+                    /** @var IPaymentProvider $provider */
+                    foreach($list[$page - 1] as $provider){
+                        $overload->sendMessage($sender, "item", [$provider->getName()]);
+                    }
+                }
+                return true;
+            });
+        $command->addNamedOverload("plugins")
+            ->addParamater((new IntegerParameter("page"))->setMin(1)->setOptional(true))
+            ->setHandler(function(CommandSender $sender, array $args, Overload $overload) : bool{
+                $pluginInfos = PaymentPool::getPluginInfos();
+                if(empty($pluginInfos)){
+                    $overload->sendMessage($sender, "failure.empty");
+                    return true;
+                }
+
+                $list = array_chunk($pluginInfos, $sender->getScreenLineHeight());
+                $page = min($args["page"], count($list));
+
+                $overload->sendMessage($sender, "head", [$page, count($list)]);
+                if(isset($list[$page - 1])){
+                    /** @var PluginInfo $pluginInfo */
+                    foreach($list[$page - 1] as $pluginInfo){
+                        $overload->sendMessage($sender, "item", [
+                            $pluginInfo->getName(),
+                            $pluginInfo->getDefault() ?? "default"
+                        ]);
+                    }
+                }
+                return true;
+            });
         $this->getServer()->getCommandMap()->register($this->getName(), $command);
 
         //Load plugin info data
@@ -118,7 +178,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
 
     public function onDisable() : void{
         //Unregister main command with subcommands
-        $this->getServer()->getCommandMap()->unregister($this->getMainCommand("payment"));
+        $this->getServer()->getCommandMap()->unregister($this->getBaseCommand("payment"));
 
         //Save plugin info data
         $filePath = "{$this->getDataFolder()}data.json";
