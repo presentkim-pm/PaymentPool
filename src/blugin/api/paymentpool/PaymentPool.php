@@ -27,17 +27,15 @@ declare(strict_types=1);
 
 namespace blugin\api\paymentpool;
 
-use blugin\api\paymentpool\command\parameter\PaymentParameter;
-use blugin\api\paymentpool\command\parameter\PluginInfoParameter;
-use blugin\lib\command\BaseCommand;
+use blugin\api\paymentpool\command\overload\DefaultOverload;
+use blugin\api\paymentpool\command\overload\ListOverload;
+use blugin\api\paymentpool\command\overload\PluginsOverload;
+use blugin\api\paymentpool\command\overload\SetOverload;
 use blugin\lib\command\BaseCommandTrait;
 use blugin\lib\command\enum\Enum;
 use blugin\lib\command\enum\EnumFactory;
-use blugin\lib\command\overload\Overload;
-use blugin\lib\command\parameter\defaults\IntegerParameter;
 use blugin\lib\command\translator\traits\TranslatorHolderTrait;
 use blugin\lib\command\translator\TranslatorHolder;
-use pocketmine\command\CommandSender;
 use pocketmine\plugin\Plugin;
 use pocketmine\plugin\PluginBase;
 
@@ -82,68 +80,10 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
     public function onEnable() : void{
         //Register main command with subcommands
         $command = $this->getBaseCommand("payment");
-        $command->addNamedOverload("default")
-            ->addParamater(new PaymentParameter("payment"))
-            ->setHandler(function(CommandSender $sender, array $args, Overload $overload) : bool{
-                $default = $args["payment"]->getName();
-                PaymentPool::setDefault($default);
-                $overload->sendMessage($sender, "success", [$default]);
-                return true;
-            });
-        $command->addNamedOverload("set")
-            ->addParamater(new PluginInfoParameter("plugin"))
-            ->addParamater(new PaymentParameter("payment"))
-            ->setHandler(function(CommandSender $sender, array $args, Overload $overload) : bool{
-                $default = $args["payment"]->getName();
-                $args["plugin"]->setDefault($default);
-                $overload->sendMessage($sender, "success", [$default]);
-                return true;
-            });
-        $command->addNamedOverload("list")
-            ->addParamater((new IntegerParameter("page"))->setMin(1)->setOptional(true))
-            ->setHandler(function(CommandSender $sender, array $args, Overload $overload) : bool{
-                $providers = PaymentPool::getProviders();
-                if(empty($providers)){
-                    $overload->sendMessage($sender, "failure.empty");
-                    return true;
-                }
-
-                $list = array_chunk($providers, $sender->getScreenLineHeight());
-                $page = min($args["page"], count($list));
-
-                $overload->sendMessage($sender, "head", [$page, count($list)]);
-                if(isset($list[$page - 1])){
-                    /** @var IPaymentProvider $provider */
-                    foreach($list[$page - 1] as $provider){
-                        $overload->sendMessage($sender, "item", [$provider->getName()]);
-                    }
-                }
-                return true;
-            });
-        $command->addNamedOverload("plugins")
-            ->addParamater((new IntegerParameter("page"))->setMin(1)->setOptional(true))
-            ->setHandler(function(CommandSender $sender, array $args, Overload $overload) : bool{
-                $pluginInfos = PaymentPool::getPluginInfos();
-                if(empty($pluginInfos)){
-                    $overload->sendMessage($sender, "failure.empty");
-                    return true;
-                }
-
-                $list = array_chunk($pluginInfos, $sender->getScreenLineHeight());
-                $page = min($args["page"], count($list));
-
-                $overload->sendMessage($sender, "head", [$page, count($list)]);
-                if(isset($list[$page - 1])){
-                    /** @var PluginInfo $pluginInfo */
-                    foreach($list[$page - 1] as $pluginInfo){
-                        $overload->sendMessage($sender, "item", [
-                            $pluginInfo->getName(),
-                            $pluginInfo->getDefault() ?? "default"
-                        ]);
-                    }
-                }
-                return true;
-            });
+        $command->addOverload(new DefaultOverload($command));
+        $command->addOverload(new SetOverload($command));
+        $command->addOverload(new ListOverload($command));
+        $command->addOverload(new PluginsOverload($command));
         $this->getServer()->getCommandMap()->register($this->getName(), $command);
 
         //Load plugin info data
