@@ -65,7 +65,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
 
         $this->providerEnum = EnumFactory::getInstance()->set(self::ENUM_PROVIDERS);
         $this->linkEnum = EnumFactory::getInstance()->set(self::ENUM_PLUGININFOS);
-        $this->createLink(self::DEFAULT_NAME);
+        $this->registerLink(self::DEFAULT_NAME);
         var_dump($this->linkEnum);
 
         $this->loadLanguage();
@@ -129,7 +129,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
      *
      * @return IPaymentProvider|null
      */
-    public function get($option = null, bool $default = true) : ?IPaymentProvider{
+    public function getProvider($option = null, bool $default = true) : ?IPaymentProvider{
         $providerName = null;
         if($option instanceof Plugin && isset($this->linkEnum[$option->getName()])){
             $providerName = $this->linkEnum[$option->getName()]->getDefault();
@@ -154,7 +154,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
      * @param IPaymentProvider $provider
      * @param string[]         $saveNames
      */
-    public function register(IPaymentProvider $provider, array $saveNames = []) : void{
+    public function registerProvider(IPaymentProvider $provider, array $saveNames = []) : void{
         if($this->getDefault() === null){
             $this->setDefault($provider->getName());
         }
@@ -188,7 +188,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
     }
 
     /** @param Plugin|string $name */
-    public function createLink($name) : void{
+    public function registerLink($name) : void{
         if($name instanceof Plugin){
             $name = $name->getName();
         }
