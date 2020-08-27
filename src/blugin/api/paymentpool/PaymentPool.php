@@ -48,6 +48,10 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         return self::$instance;
     }
 
+    public static function on($option = null, bool $default = true) : ?IPaymentProvider{
+        return self::getInstance()->getProvider($option, $default);
+    }
+
     public const DEFAULT_NAME = "@";
     public const ENUM_PROVIDERS = "Payment";
     public const ENUM_PLUGININFOS = "PaymentLink";
