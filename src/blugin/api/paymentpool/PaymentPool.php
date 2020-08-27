@@ -104,16 +104,15 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
             self::setDefault($default->getName());
         }
 
-        $infos = [];
         foreach($data["infos"] as $infoData){
             try{
                 $info = PluginInfo::jsonDeserialize($infoData);
-                $infos[$info->getName()] = $info;
+                self::$pluginInfoEnum->set($info->getName(), $info);
             }catch(\Exception $e){
+                self::$pluginInfoEnum->setAll([]);
                 throw new \RuntimeException("[data.json] Unable to parse info data");
             }
         }
-        self::$pluginInfoEnum->setAll($infos);
     }
 
     public function onDisable() : void{
