@@ -22,4 +22,7 @@ permissions:
       payment.cmd.links:
         description: PaymentPool command - links
         default: op
+      payment.cmd.install:
+        description: PaymentPool command - install
+        default: op
 ...

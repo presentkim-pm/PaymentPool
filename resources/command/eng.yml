@@ -41,3 +41,7 @@ payment:
       children:
         page:
           name: "Page"
+    install:
+      name: "Install"
+      aliases: ["autoinstall", "download"]
+      permission: "op"

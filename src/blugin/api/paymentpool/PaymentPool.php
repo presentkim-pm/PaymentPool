@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace blugin\api\paymentpool;
 
+use blugin\api\paymentpool\command\overload\InstallOverload;
 use blugin\api\paymentpool\command\overload\LinksOverload;
 use blugin\api\paymentpool\command\overload\PaymentsOverload;
 use blugin\api\paymentpool\command\overload\SetOverload;
@@ -77,6 +78,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         $command->addOverload(new SetOverload($command));
         $command->addOverload(new PaymentsOverload($command));
         $command->addOverload(new LinksOverload($command));
+        $command->addOverload(new InstallOverload($command));
         $this->getServer()->getCommandMap()->register($this->getName(), $command);
 
         //Load plugin info data
@@ -100,6 +102,9 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
                 throw new \RuntimeException("[data.json] Unable to parse info data");
             }
         }
+
+        //Load provider scripts
+        $this->getServer()->getPluginManager()->loadPlugins($this->getPrividerFolder());
     }
 
     public function onDisable() : void{
@@ -110,6 +115,14 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         $filePath = "{$this->getDataFolder()}links.json";
         file_put_contents($filePath, json_encode($this->getLinks(), JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
         $this->linkEnum->setAll([]);
+    }
+
+    public function getPrividerFolder() : string{
+        $path = $this->getDataFolder() . "providers/";
+        if(!file_exists($path)){
+            mkdir($path, 0777, true);
+        }
+        return $path;
     }
 
     public function getProviderEnum() : Enum{
