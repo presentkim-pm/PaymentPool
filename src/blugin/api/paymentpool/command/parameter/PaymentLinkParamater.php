@@ -30,17 +30,17 @@ use blugin\lib\command\parameter\defaults\EnumParameter;
 use blugin\lib\command\parameter\Parameter;
 use pocketmine\command\CommandSender;
 
-class PluginInfoParameter extends EnumParameter{
+class PaymentLinkParamater extends EnumParameter{
     public function getTypeName() : string{
-        return "plugin";
+        return "paymentlink";
     }
 
     public function getFailureMessage(CommandSender $sender, string $argument) : ?string{
-        return "commands.generic.invalidPlugin";
+        return "commands.generic.invalidLink";
     }
 
     public function prepare() : Parameter{
-        $this->enum = PaymentPool::getInstance()->getPluginInfoEnum();
+        $this->enum = PaymentPool::getInstance()->getLinkEnum();
         return $this;
     }
 

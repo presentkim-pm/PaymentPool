@@ -34,10 +34,10 @@ use blugin\lib\command\overload\Overload;
 use blugin\lib\command\parameter\defaults\IntegerParameter;
 use pocketmine\command\CommandSender;
 
-class ListOverload extends NamedOverload implements ICommandHandler{
+class PaymentsOverload extends NamedOverload implements ICommandHandler{
     public function __construct(BaseCommand $baseCommand){
-        parent::__construct($baseCommand, "list");
-        $this->addParamater((new IntegerParameter("page"))->setMin(1)->setOptional(true));
+        parent::__construct($baseCommand, "payments");
+        $this->addParamater((new IntegerParameter("page"))->setMin(1)->setDefault(1)->setOptional(true));
         $this->setHandler($this);
     }
 

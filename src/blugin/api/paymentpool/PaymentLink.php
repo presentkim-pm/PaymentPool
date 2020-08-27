@@ -30,7 +30,7 @@ namespace blugin\api\paymentpool;
 use pocketmine\plugin\Plugin;
 use pocketmine\Server;
 
-class PluginInfo implements \JsonSerializable{
+class PaymentLink implements \JsonSerializable{
     /** @var string */
     private $name;
 
@@ -43,7 +43,7 @@ class PluginInfo implements \JsonSerializable{
      */
     public function __construct(string $name, ?string $default = null){
         $this->name = $name;
-        $this->default = $default ?? PaymentPool::getDefault();
+        $this->default = $default;
     }
 
     /** @return string */
@@ -76,16 +76,16 @@ class PluginInfo implements \JsonSerializable{
     }
 
     /**
-     * Returns an PluginInfo from properties created in an array by {@link PluginInfo::jsonSerialize}
+     * Returns an PluginInfo from properties created in an array by {@link PaymentLink::jsonSerialize}
      *
      * @param mixed[] $data
      *
-     * @return null|PluginInfo
+     * @return null|PaymentLink
      */
-    final public static function jsonDeserialize(array $data) : ?PluginInfo{
+    final public static function jsonDeserialize(array $data) : ?PaymentLink{
         if(!isset($data["name"]) || !isset($data["default"]))
             return null;
 
-        return new PluginInfo((string) $data["name"], (string) $data["default"]);
+        return new PaymentLink((string) $data["name"], (string) $data["default"]);
     }
 }
