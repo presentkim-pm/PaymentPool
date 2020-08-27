@@ -18,13 +18,6 @@ payment:
   children:
     #Setting of subcommands
     #Same as main command setting
-    default:
-      name: "Default"
-      aliases: ["d", "def"]
-      permission: "op"
-      children:
-        payment:
-          name: "Payment"
     set:
       name: "Set"
       aliases: ["s"]

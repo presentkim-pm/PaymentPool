@@ -27,7 +27,6 @@ declare(strict_types=1);
 
 namespace blugin\api\paymentpool;
 
-use blugin\api\paymentpool\command\overload\DefaultOverload;
 use blugin\api\paymentpool\command\overload\ListOverload;
 use blugin\api\paymentpool\command\overload\PluginsOverload;
 use blugin\api\paymentpool\command\overload\SetOverload;
@@ -80,7 +79,6 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
     public function onEnable() : void{
         //Register main command with subcommands
         $command = $this->getBaseCommand("payment");
-        $command->addOverload(new DefaultOverload($command));
         $command->addOverload(new SetOverload($command));
         $command->addOverload(new ListOverload($command));
         $command->addOverload(new PluginsOverload($command));
