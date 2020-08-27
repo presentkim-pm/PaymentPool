@@ -18,13 +18,6 @@ payment:
   children:
     #하위 명령어들의 설정
     #메인 명령어 설정과 동일합니다
-    default:
-      name: "Default"
-      aliases: ["d", "def"]
-      permission: "op"
-      children:
-        payment:
-          name: "Payment"
     set:
       name: "Set"
       aliases: ["s"]
