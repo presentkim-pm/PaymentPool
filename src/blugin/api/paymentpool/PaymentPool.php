@@ -60,19 +60,6 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
     /** @var IPaymentProvider[] save name => economy provider */
     private $providerSaveNames = [];
 
-    /** @return IPaymentProvider[] name => provider */
-    public function getProviders() : array{
-        return $this->providerEnum->getAll();
-    }
-
-    public function getProviderEnum() : Enum{
-        return $this->providerEnum;
-    }
-
-    public function getLinkEnum() : Enum{
-        return $this->linkEnum;
-    }
-
     public function onLoad(){
         self::$instance = $this;
 
@@ -127,6 +114,15 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         $this->linkEnum->setAll([]);
     }
 
+    public function getProviderEnum() : Enum{
+        return $this->providerEnum;
+    }
+
+    /** @return IPaymentProvider[] name => provider */
+    public function getProviders() : array{
+        return $this->providerEnum->getAll();
+    }
+
     /**
      * @param Plugin|string|null $option If it was null, return default provider
      * @param bool               $default = true
@@ -169,6 +165,15 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         }
     }
 
+    public function getLinkEnum() : Enum{
+        return $this->linkEnum;
+    }
+
+    /** @return PaymentLink[] */
+    public function getLinks() : array{
+        return $this->linkEnum->getAll();
+    }
+
     /**
      * @param Plugin|string $name
      *
@@ -189,11 +194,6 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         }
 
         $this->linkEnum->set($name, new PaymentLink($name, $this->getDefault()));
-    }
-
-    /** @return PaymentLink[] */
-    public function getLinks() : array{
-        return $this->linkEnum->getAll();
     }
 
     /** @return string|null */
