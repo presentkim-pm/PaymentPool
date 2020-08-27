@@ -40,7 +40,7 @@ class PluginInfoParameter extends EnumParameter{
     }
 
     public function prepare() : Parameter{
-        $this->enum = PaymentPool::getPluginInfoEnum();
+        $this->enum = PaymentPool::getInstance()->getPluginInfoEnum();
         return $this;
     }
 

@@ -40,7 +40,7 @@ class PaymentParameter extends EnumParameter{
     }
 
     public function prepare() : Parameter{
-        $this->enum = PaymentPool::getProviderEnum();
+        $this->enum = PaymentPool::getInstance()->getProviderEnum();
         return $this;
     }
 
