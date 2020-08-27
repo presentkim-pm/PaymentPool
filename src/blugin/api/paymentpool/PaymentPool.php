@@ -196,8 +196,10 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
 
     /** @return string|null */
     public function getDefault() : ?string{
+        $defaultInfo = $this->getPluginInfo(self::DEFAULT_NAME);
+        $default = $defaultInfo === null ? null : $defaultInfo->getDefault();
         $providers = $this->getProviders();
-        return $this->getPluginInfo(self::DEFAULT_NAME)->getDefault() ?? (empty($providers) ? null : array_key_first($providers));
+        return $default ?? (empty($providers) ? null : array_key_first($providers));
     }
 
     /** @param string|null $default */
