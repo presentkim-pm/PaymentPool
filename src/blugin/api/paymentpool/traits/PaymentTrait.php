@@ -29,7 +29,7 @@ namespace blugin\api\paymentpool\traits;
 
 use blugin\api\paymentpool\IPaymentProvider;
 use blugin\api\paymentpool\PaymentPool;
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 trait PaymentTrait{
     public static function getPaymentProvider() : ?IPaymentProvider{
