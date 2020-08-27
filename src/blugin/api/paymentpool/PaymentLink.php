@@ -66,26 +66,7 @@ class PaymentLink implements \JsonSerializable{
         return Server::getInstance()->getPluginManager()->getPlugin($this->name);
     }
 
-    /**
-     * Returns an array of plugin info properties that can be serialized to json.
-     *
-     * @return mixed[]
-     */
-    public function jsonSerialize() : array{
-        return ["name" => $this->name, "default" => $this->default];
-    }
-
-    /**
-     * Returns an PluginInfo from properties created in an array by {@link PaymentLink::jsonSerialize}
-     *
-     * @param mixed[] $data
-     *
-     * @return null|PaymentLink
-     */
-    final public static function jsonDeserialize(array $data) : ?PaymentLink{
-        if(!isset($data["name"]) || !isset($data["default"]))
-            return null;
-
-        return new PaymentLink((string) $data["name"], (string) $data["default"]);
+    public function jsonSerialize() : ?string{
+        return $this->default;
     }
 }

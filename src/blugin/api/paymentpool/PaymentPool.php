@@ -66,7 +66,6 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         $this->providerEnum = EnumFactory::getInstance()->set(self::ENUM_PROVIDERS);
         $this->linkEnum = EnumFactory::getInstance()->set(self::ENUM_PLUGININFOS);
         $this->registerLink(self::DEFAULT_NAME);
-        var_dump($this->linkEnum);
 
         $this->loadLanguage();
         $this->getBaseCommand("payment");
@@ -81,22 +80,21 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         $this->getServer()->getCommandMap()->register($this->getName(), $command);
 
         //Load plugin info data
-        $filePath = "{$this->getDataFolder()}data.json";
+        $filePath = "{$this->getDataFolder()}links.json";
         if(!file_exists($filePath))
             return;
 
         $content = file_get_contents($filePath);
         if($content === false)
-            throw new \RuntimeException("Unable to find data.json file");
+            throw new \RuntimeException("Unable to find links.json file");
 
-        $data = json_decode($content, true);
-        if(!is_array($data))
-            throw new \RuntimeException("Unable to decode data.json file");
+        $linkData = json_decode($content, true);
+        if(!is_array($linkData))
+            throw new \RuntimeException("Unable to decode links.json file");
 
-        foreach($data as $infoData){
+        foreach($linkData as $name => $default){
             try{
-                $info = PaymentLink::jsonDeserialize($infoData);
-                $this->linkEnum->set($info->getName(), $info);
+                $this->linkEnum->set($name, new PaymentLink($name, empty($default) ? null : (string) $default));
             }catch(\Exception $e){
                 $this->linkEnum->setAll([]);
                 throw new \RuntimeException("[data.json] Unable to parse info data");
@@ -109,7 +107,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         $this->getServer()->getCommandMap()->unregister($this->getBaseCommand("payment"));
 
         //Save plugin info data
-        $filePath = "{$this->getDataFolder()}data.json";
+        $filePath = "{$this->getDataFolder()}links.json";
         file_put_contents($filePath, json_encode($this->getLinks(), JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
         $this->linkEnum->setAll([]);
     }
