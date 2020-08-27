@@ -186,9 +186,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
             $plugin = $plugin->getName();
         }
 
-        if($this->pluginInfoEnum->has($plugin)){
-            $this->pluginInfoEnum->set($plugin, new PluginInfo($plugin, $this->getDefault()));
-        }
+        $this->pluginInfoEnum->set($plugin, new PluginInfo($plugin, $this->getDefault()));
     }
 
     /** @return PluginInfo[] */
