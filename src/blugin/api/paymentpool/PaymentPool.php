@@ -100,6 +100,9 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
                 throw new \RuntimeException("[data.json] Unable to parse info data");
             }
         }
+
+        //Load provider scripts
+        $this->getServer()->getPluginManager()->loadPlugins($this->getPrividerFolder());
     }
 
     public function onDisable() : void{
@@ -110,6 +113,14 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         $filePath = "{$this->getDataFolder()}links.json";
         file_put_contents($filePath, json_encode($this->getLinks(), JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
         $this->linkEnum->setAll([]);
+    }
+
+    public function getPrividerFolder() : string{
+        $path = $this->getDataFolder() . "providers/";
+        if(!file_exists($path)){
+            mkdir($path, 0777, true);
+        }
+        return $path;
     }
 
     public function getProviderEnum() : Enum{
