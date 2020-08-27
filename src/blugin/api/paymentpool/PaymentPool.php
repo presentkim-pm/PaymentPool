@@ -27,9 +27,8 @@ declare(strict_types=1);
 
 namespace blugin\api\paymentpool;
 
-use blugin\api\paymentpool\command\overload\DefaultOverload;
-use blugin\api\paymentpool\command\overload\ListOverload;
-use blugin\api\paymentpool\command\overload\PluginsOverload;
+use blugin\api\paymentpool\command\overload\LinksOverload;
+use blugin\api\paymentpool\command\overload\PaymentsOverload;
 use blugin\api\paymentpool\command\overload\SetOverload;
 use blugin\lib\command\BaseCommandTrait;
 use blugin\lib\command\enum\Enum;
@@ -42,36 +41,31 @@ use pocketmine\plugin\PluginBase;
 class PaymentPool extends PluginBase implements TranslatorHolder{
     use TranslatorHolderTrait, BaseCommandTrait;
 
+    private static $instance;
+
+    public static function getInstance() : PaymentPool{
+        return self::$instance;
+    }
+
+    public const DEFAULT_NAME = "@";
     public const ENUM_PROVIDERS = "Payment";
-    public const ENUM_PLUGININFOS = "PaymentPlugin";
+    public const ENUM_PLUGININFOS = "PaymentLink";
 
     /** @var Enum name => IPaymentProvider */
-    private static $providerEnum;
+    private $providerEnum;
+
+    /** @var Enum name => PaymentLink */
+    private $linkEnum;
+
     /** @var IPaymentProvider[] save name => economy provider */
-    private static $providerSaveNames = [];
-
-    /** @var string|null */
-    private static $default = null;
-
-    /** @var Enum name => PluginInfo */
-    private static $pluginInfoEnum;
-
-    /** @return IPaymentProvider[] name => provider */
-    public static function getProviders() : array{
-        return self::$providerEnum->getAll();
-    }
-
-    public static function getProviderEnum() : Enum{
-        return self::$providerEnum;
-    }
-
-    public static function getPluginInfoEnum() : Enum{
-        return self::$pluginInfoEnum;
-    }
+    private $providerSaveNames = [];
 
     public function onLoad(){
-        self::$providerEnum = EnumFactory::getInstance()->set(self::ENUM_PROVIDERS);
-        self::$pluginInfoEnum = EnumFactory::getInstance()->set(self::ENUM_PLUGININFOS);
+        self::$instance = $this;
+
+        $this->providerEnum = EnumFactory::getInstance()->set(self::ENUM_PROVIDERS);
+        $this->linkEnum = EnumFactory::getInstance()->set(self::ENUM_PLUGININFOS);
+        $this->registerLink(self::DEFAULT_NAME);
 
         $this->loadLanguage();
         $this->getBaseCommand("payment");
@@ -80,40 +74,32 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
     public function onEnable() : void{
         //Register main command with subcommands
         $command = $this->getBaseCommand("payment");
-        $command->addOverload(new DefaultOverload($command));
         $command->addOverload(new SetOverload($command));
-        $command->addOverload(new ListOverload($command));
-        $command->addOverload(new PluginsOverload($command));
+        $command->addOverload(new PaymentsOverload($command));
+        $command->addOverload(new LinksOverload($command));
         $this->getServer()->getCommandMap()->register($this->getName(), $command);
 
         //Load plugin info data
-        $filePath = "{$this->getDataFolder()}data.json";
+        $filePath = "{$this->getDataFolder()}links.json";
         if(!file_exists($filePath))
             return;
 
         $content = file_get_contents($filePath);
         if($content === false)
-            throw new \RuntimeException("Unable to find data.json file");
+            throw new \RuntimeException("Unable to find links.json file");
 
-        $data = json_decode($content, true);
-        if(!is_array($data) || !is_string($data["default"] ?? null) || !is_array($data["infos"] ?? null))
-            throw new \RuntimeException("Unable to decode data.json file");
+        $linkData = json_decode($content, true);
+        if(!is_array($linkData))
+            throw new \RuntimeException("Unable to decode links.json file");
 
-        $default = self::get($data["default"]);
-        if($default !== null){
-            self::setDefault($default->getName());
-        }
-
-        $infos = [];
-        foreach($data["infos"] as $infoData){
+        foreach($linkData as $name => $default){
             try{
-                $info = PluginInfo::jsonDeserialize($infoData);
-                $infos[$info->getName()] = $info;
+                $this->linkEnum->set($name, new PaymentLink($name, empty($default) ? null : (string) $default));
             }catch(\Exception $e){
+                $this->linkEnum->setAll([]);
                 throw new \RuntimeException("[data.json] Unable to parse info data");
             }
         }
-        self::$pluginInfoEnum->setAll($infos);
     }
 
     public function onDisable() : void{
@@ -121,12 +107,18 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         $this->getServer()->getCommandMap()->unregister($this->getBaseCommand("payment"));
 
         //Save plugin info data
-        $filePath = "{$this->getDataFolder()}data.json";
-        file_put_contents($filePath, json_encode([
-            "default" => self::getDefault(),
-            "infos" => self::$pluginInfoEnum
-        ], JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
-        self::$pluginInfoEnum->setAll([]);
+        $filePath = "{$this->getDataFolder()}links.json";
+        file_put_contents($filePath, json_encode($this->getLinks(), JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
+        $this->linkEnum->setAll([]);
+    }
+
+    public function getProviderEnum() : Enum{
+        return $this->providerEnum;
+    }
+
+    /** @return IPaymentProvider[] name => provider */
+    public function getProviders() : array{
+        return $this->providerEnum->getAll();
     }
 
     /**
@@ -135,22 +127,22 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
      *
      * @return IPaymentProvider|null
      */
-    public static function get($option = null, bool $default = true) : ?IPaymentProvider{
+    public function getProvider($option = null, bool $default = true) : ?IPaymentProvider{
         $providerName = null;
-        if($option instanceof Plugin && isset(self::$pluginInfoEnum[$option->getName()])){
-            $providerName = self::$pluginInfoEnum[$option->getName()]->getDefault();
+        if($option instanceof Plugin && isset($this->linkEnum[$option->getName()])){
+            $providerName = $this->linkEnum[$option->getName()]->getDefault();
         }elseif(is_string($option)){
-            if(self::$pluginInfoEnum->has($option)){
-                $providerName = self::$pluginInfoEnum->get($option)->getDefault();
+            if($this->linkEnum->has($option)){
+                $providerName = $this->linkEnum->get($option)->getDefault();
             }else{
                 $providerName = $option;
             }
         }
 
         $providerName = strtolower($providerName ?? "");
-        $provider = self::$providerEnum->get($providerName) ?? self::$providerSaveNames[$providerName] ?? null;
+        $provider = $this->providerEnum->get($providerName) ?? $this->providerSaveNames[$providerName] ?? null;
         if($provider !== null && $default){
-            $provider = self::$providerEnum->get(strtolower(self::getDefault())) ?? null;
+            $provider = $this->providerEnum->get(strtolower($this->getDefault())) ?? null;
         }
 
         return $provider;
@@ -160,54 +152,58 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
      * @param IPaymentProvider $provider
      * @param string[]         $saveNames
      */
-    public static function register(IPaymentProvider $provider, array $saveNames = []) : void{
-        if(self::$default === null){
-            self::$default = $provider->getName();
+    public function registerProvider(IPaymentProvider $provider, array $saveNames = []) : void{
+        if($this->getDefault() === null){
+            $this->setDefault($provider->getName());
         }
 
-        self::$providerEnum->set(strtolower($provider->getName()), $provider);
+        $this->providerEnum->set(strtolower($provider->getName()), $provider);
         foreach($saveNames as $name){
-            self::$providerSaveNames[strtolower($name)] = $provider;
+            $this->providerSaveNames[strtolower($name)] = $provider;
         }
+    }
+
+    public function getLinkEnum() : Enum{
+        return $this->linkEnum;
+    }
+
+    /** @return PaymentLink[] */
+    public function getLinks() : array{
+        return $this->linkEnum->getAll();
     }
 
     /**
-     * @param Plugin|string $plugin
+     * @param Plugin|string $name
      *
-     * @return PluginInfo|null
+     * @return PaymentLink|null
      */
-    public static function getPluginInfo($plugin) : ?PluginInfo{
-        if($plugin instanceof Plugin){
-            $plugin = $plugin->getName();
+    public function getLink($name) : ?PaymentLink{
+        if($name instanceof Plugin){
+            $name = $name->getName();
         }
 
-        return self::$pluginInfoEnum[$plugin] ?? null;
+        return $this->linkEnum->get($name) ?? null;
     }
 
-    /** @param Plugin|string $plugin */
-    public static function createPluginInfo($plugin) : void{
-        if($plugin instanceof Plugin){
-            $plugin = $plugin->getName();
+    /** @param Plugin|string $name */
+    public function registerLink($name) : void{
+        if($name instanceof Plugin){
+            $name = $name->getName();
         }
 
-        if(self::$pluginInfoEnum->has($plugin)){
-            self::$pluginInfoEnum->set($plugin, new PluginInfo($plugin, self::getDefault()));
-        }
-    }
-
-    /** @return PluginInfo[] */
-    public static function getPluginInfos() : array{
-        return self::$pluginInfoEnum->getAll();
+        $this->linkEnum->set($name, new PaymentLink($name, $this->getDefault()));
     }
 
     /** @return string|null */
-    public static function getDefault() : ?string{
-        $providers = self::getProviders();
-        return self::$default ?? (empty($providers) ? null : array_key_first($providers));
+    public function getDefault() : ?string{
+        $defaultLink = $this->getLink(self::DEFAULT_NAME);
+        $default = $defaultLink === null ? null : $defaultLink->getDefault();
+        $providers = $this->getProviders();
+        return $default ?? (empty($providers) ? null : array_key_first($providers));
     }
 
     /** @param string|null $default */
-    public static function setDefault(?string $default) : void{
-        self::$default = $default;
+    public function setDefault(?string $default) : void{
+        $this->getLink(self::DEFAULT_NAME)->setDefault($default);
     }
 }

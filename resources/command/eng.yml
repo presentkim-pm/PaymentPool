@@ -18,13 +18,6 @@ payment:
   children:
     #Setting of subcommands
     #Same as main command setting
-    default:
-      name: "Default"
-      aliases: ["d", "def"]
-      permission: "op"
-      children:
-        payment:
-          name: "Payment"
     set:
       name: "Set"
       aliases: ["s"]
@@ -34,16 +27,16 @@ payment:
           name: "Payment"
         plugin:
           name: "Plugin"
-    plugins:
-      name: "Plugins"
-      aliases: ["p", "pluginlist"]
+    payments:
+      name: "Payments"
+      aliases: ["paymentlist", "list"]
       permission: "op"
       children:
         page:
           name: "Page"
-    list:
-      name: "List"
-      aliases: ["l"]
+    links:
+      name: "Links"
+      aliases: ["l", "linklist"]
       permission: "op"
       children:
         page:
