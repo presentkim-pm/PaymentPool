@@ -41,6 +41,7 @@ use pocketmine\plugin\PluginBase;
 class PaymentPool extends PluginBase implements TranslatorHolder{
     use TranslatorHolderTrait, BaseCommandTrait;
 
+    public const DEFAULT_NAME = "@";
     public const ENUM_PROVIDERS = "Payment";
     public const ENUM_PLUGININFOS = "PaymentPlugin";
 
@@ -48,9 +49,6 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
     private static $providerEnum;
     /** @var IPaymentProvider[] save name => economy provider */
     private static $providerSaveNames = [];
-
-    /** @var string|null */
-    private static $default = null;
 
     /** @var Enum name => PluginInfo */
     private static $pluginInfoEnum;
@@ -71,6 +69,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
     public function onLoad(){
         self::$providerEnum = EnumFactory::getInstance()->set(self::ENUM_PROVIDERS);
         self::$pluginInfoEnum = EnumFactory::getInstance()->set(self::ENUM_PLUGININFOS);
+        self::createPluginInfo(self::DEFAULT_NAME);
 
         $this->loadLanguage();
         $this->getBaseCommand("payment");
@@ -158,8 +157,8 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
      * @param string[]         $saveNames
      */
     public static function register(IPaymentProvider $provider, array $saveNames = []) : void{
-        if(self::$default === null){
-            self::$default = $provider->getName();
+        if(self::getDefault() === null){
+            self::setDefault($provider->getName());
         }
 
         self::$providerEnum->set(strtolower($provider->getName()), $provider);
@@ -200,11 +199,11 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
     /** @return string|null */
     public static function getDefault() : ?string{
         $providers = self::getProviders();
-        return self::$default ?? (empty($providers) ? null : array_key_first($providers));
+        return self::getPluginInfo(self::DEFAULT_NAME)->getDefault() ?? (empty($providers) ? null : array_key_first($providers));
     }
 
     /** @param string|null $default */
     public static function setDefault(?string $default) : void{
-        self::$default = $default;
+        self::getPluginInfo(self::DEFAULT_NAME)->setDefault($default);
     }
 }
