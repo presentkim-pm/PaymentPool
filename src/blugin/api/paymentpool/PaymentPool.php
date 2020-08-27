@@ -93,15 +93,10 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
             throw new \RuntimeException("Unable to find data.json file");
 
         $data = json_decode($content, true);
-        if(!is_array($data) || !is_string($data["default"] ?? null) || !is_array($data["infos"] ?? null))
+        if(!is_array($data))
             throw new \RuntimeException("Unable to decode data.json file");
 
-        $default = self::get($data["default"]);
-        if($default !== null){
-            self::setDefault($default->getName());
-        }
-
-        foreach($data["infos"] as $infoData){
+        foreach($data as $infoData){
             try{
                 $info = PluginInfo::jsonDeserialize($infoData);
                 self::$pluginInfoEnum->set($info->getName(), $info);
@@ -118,10 +113,7 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
 
         //Save plugin info data
         $filePath = "{$this->getDataFolder()}data.json";
-        file_put_contents($filePath, json_encode([
-            "default" => self::getDefault(),
-            "infos" => self::$pluginInfoEnum
-        ], JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
+        file_put_contents($filePath, json_encode(self::$pluginInfoEnum, JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
         self::$pluginInfoEnum->setAll([]);
     }
 
