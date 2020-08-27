@@ -13,16 +13,13 @@ permissions:
     description: PaymentPool command
     default: op
     children:
-      payment.cmd.default:
-        description: PaymentPool command - default
-        default: op
       payment.cmd.set:
         description: PaymentPool command - set
         default: op
-      payment.cmd.plugins:
-        description: PaymentPool command - plugins
+      payment.cmd.payments:
+        description: PaymentPool command - payments
         default: op
-      payment.cmd.list:
-        description: PaymentPool command - list
+      payment.cmd.links:
+        description: PaymentPool command - links
         default: op
 ...

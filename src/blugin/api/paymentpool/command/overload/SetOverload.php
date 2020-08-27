@@ -26,7 +26,7 @@ declare(strict_types=1);
 namespace blugin\api\paymentpool\command\overload;
 
 use blugin\api\paymentpool\command\parameter\PaymentParameter;
-use blugin\api\paymentpool\command\parameter\PluginInfoParameter;
+use blugin\api\paymentpool\command\parameter\PaymentLinkParamater;
 use blugin\lib\command\BaseCommand;
 use blugin\lib\command\handler\ICommandHandler;
 use blugin\lib\command\overload\NamedOverload;
@@ -36,7 +36,7 @@ use pocketmine\command\CommandSender;
 class SetOverload extends NamedOverload implements ICommandHandler{
     public function __construct(BaseCommand $baseCommand){
         parent::__construct($baseCommand, "set");
-        $this->addParamater(new PluginInfoParameter("plugin"));
+        $this->addParamater(new PaymentLinkParamater("plugin"));
         $this->addParamater(new PaymentParameter("payment"));
         $this->setHandler($this);
     }

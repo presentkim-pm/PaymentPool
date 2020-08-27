@@ -25,26 +25,43 @@ declare(strict_types=1);
 
 namespace blugin\api\paymentpool\command\overload;
 
-use blugin\api\paymentpool\command\parameter\PaymentParameter;
 use blugin\api\paymentpool\PaymentPool;
+use blugin\api\paymentpool\PaymentLink;
 use blugin\lib\command\BaseCommand;
 use blugin\lib\command\handler\ICommandHandler;
 use blugin\lib\command\overload\NamedOverload;
 use blugin\lib\command\overload\Overload;
+use blugin\lib\command\parameter\defaults\IntegerParameter;
 use pocketmine\command\CommandSender;
 
-class DefaultOverload extends NamedOverload implements ICommandHandler{
+class LinksOverload extends NamedOverload implements ICommandHandler{
     public function __construct(BaseCommand $baseCommand){
-        parent::__construct($baseCommand, "default");
-        $this->addParamater(new PaymentParameter("payment"));
+        parent::__construct($baseCommand, "links");
+        $this->addParamater((new IntegerParameter("page"))->setMin(1)->setDefault(1)->setOptional(true));
         $this->setHandler($this);
     }
 
     /** @param mixed[] $args name => value */
     public function handle(CommandSender $sender, array $args, Overload $overload) : bool{
-        $default = $args["payment"]->getName();
-        PaymentPool::setDefault($default);
-        $overload->sendMessage($sender, "success", [$default]);
+        $pluginInfos = PaymentPool::getInstance()->getLinks();
+        if(empty($pluginInfos)){
+            $overload->sendMessage($sender, "failure.empty");
+            return true;
+        }
+
+        $list = array_chunk($pluginInfos, $sender->getScreenLineHeight());
+        $page = min($args["page"], count($list));
+
+        $overload->sendMessage($sender, "head", [$page, count($list)]);
+        if(isset($list[$page - 1])){
+            /** @var PaymentLink $pluginInfo */
+            foreach($list[$page - 1] as $pluginInfo){
+                $overload->sendMessage($sender, "item", [
+                    $pluginInfo->getName(),
+                    $pluginInfo->getDefault() ?? "default"
+                ]);
+            }
+        }
         return true;
     }
 }
