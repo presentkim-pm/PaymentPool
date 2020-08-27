@@ -43,7 +43,7 @@ class ListOverload extends NamedOverload implements ICommandHandler{
 
     /** @param mixed[] $args name => value */
     public function handle(CommandSender $sender, array $args, Overload $overload) : bool{
-        $providers = PaymentPool::getProviders();
+        $providers = PaymentPool::getInstance()->getProviders();
         if(empty($providers)){
             $overload->sendMessage($sender, "failure.empty");
             return true;

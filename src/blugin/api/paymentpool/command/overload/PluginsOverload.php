@@ -43,7 +43,7 @@ class PluginsOverload extends NamedOverload implements ICommandHandler{
 
     /** @param mixed[] $args name => value */
     public function handle(CommandSender $sender, array $args, Overload $overload) : bool{
-        $pluginInfos = PaymentPool::getPluginInfos();
+        $pluginInfos = PaymentPool::getInstance()->getPluginInfos();
         if(empty($pluginInfos)){
             $overload->sendMessage($sender, "failure.empty");
             return true;

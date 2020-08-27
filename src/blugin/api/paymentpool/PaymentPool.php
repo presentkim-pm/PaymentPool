@@ -41,35 +41,43 @@ use pocketmine\plugin\PluginBase;
 class PaymentPool extends PluginBase implements TranslatorHolder{
     use TranslatorHolderTrait, BaseCommandTrait;
 
+    private static $instance;
+
+    public static function getInstance() : PaymentPool{
+        return self::$instance;
+    }
+
     public const DEFAULT_NAME = "@";
     public const ENUM_PROVIDERS = "Payment";
     public const ENUM_PLUGININFOS = "PaymentPlugin";
 
     /** @var Enum name => IPaymentProvider */
-    private static $providerEnum;
+    private $providerEnum;
     /** @var IPaymentProvider[] save name => economy provider */
-    private static $providerSaveNames = [];
+    private $providerSaveNames = [];
 
     /** @var Enum name => PluginInfo */
-    private static $pluginInfoEnum;
+    private $pluginInfoEnum;
 
     /** @return IPaymentProvider[] name => provider */
-    public static function getProviders() : array{
-        return self::$providerEnum->getAll();
+    public function getProviders() : array{
+        return $this->providerEnum->getAll();
     }
 
-    public static function getProviderEnum() : Enum{
-        return self::$providerEnum;
+    public function getProviderEnum() : Enum{
+        return $this->providerEnum;
     }
 
-    public static function getPluginInfoEnum() : Enum{
-        return self::$pluginInfoEnum;
+    public function getPluginInfoEnum() : Enum{
+        return $this->pluginInfoEnum;
     }
 
     public function onLoad(){
-        self::$providerEnum = EnumFactory::getInstance()->set(self::ENUM_PROVIDERS);
-        self::$pluginInfoEnum = EnumFactory::getInstance()->set(self::ENUM_PLUGININFOS);
-        self::createPluginInfo(self::DEFAULT_NAME);
+        self::$instance = $this;
+
+        $this->providerEnum = EnumFactory::getInstance()->set(self::ENUM_PROVIDERS);
+        $this->pluginInfoEnum = EnumFactory::getInstance()->set(self::ENUM_PLUGININFOS);
+        $this->createPluginInfo(self::DEFAULT_NAME);
 
         $this->loadLanguage();
         $this->getBaseCommand("payment");
@@ -99,9 +107,9 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
         foreach($data as $infoData){
             try{
                 $info = PluginInfo::jsonDeserialize($infoData);
-                self::$pluginInfoEnum->set($info->getName(), $info);
+                $this->pluginInfoEnum->set($info->getName(), $info);
             }catch(\Exception $e){
-                self::$pluginInfoEnum->setAll([]);
+                $this->pluginInfoEnum->setAll([]);
                 throw new \RuntimeException("[data.json] Unable to parse info data");
             }
         }
@@ -113,8 +121,8 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
 
         //Save plugin info data
         $filePath = "{$this->getDataFolder()}data.json";
-        file_put_contents($filePath, json_encode(self::$pluginInfoEnum, JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
-        self::$pluginInfoEnum->setAll([]);
+        file_put_contents($filePath, json_encode($this->pluginInfoEnum, JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING));
+        $this->pluginInfoEnum->setAll([]);
     }
 
     /**
@@ -123,22 +131,22 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
      *
      * @return IPaymentProvider|null
      */
-    public static function get($option = null, bool $default = true) : ?IPaymentProvider{
+    public function get($option = null, bool $default = true) : ?IPaymentProvider{
         $providerName = null;
-        if($option instanceof Plugin && isset(self::$pluginInfoEnum[$option->getName()])){
-            $providerName = self::$pluginInfoEnum[$option->getName()]->getDefault();
+        if($option instanceof Plugin && isset($this->pluginInfoEnum[$option->getName()])){
+            $providerName = $this->pluginInfoEnum[$option->getName()]->getDefault();
         }elseif(is_string($option)){
-            if(self::$pluginInfoEnum->has($option)){
-                $providerName = self::$pluginInfoEnum->get($option)->getDefault();
+            if($this->pluginInfoEnum->has($option)){
+                $providerName = $this->pluginInfoEnum->get($option)->getDefault();
             }else{
                 $providerName = $option;
             }
         }
 
         $providerName = strtolower($providerName ?? "");
-        $provider = self::$providerEnum->get($providerName) ?? self::$providerSaveNames[$providerName] ?? null;
+        $provider = $this->providerEnum->get($providerName) ?? $this->providerSaveNames[$providerName] ?? null;
         if($provider !== null && $default){
-            $provider = self::$providerEnum->get(strtolower(self::getDefault())) ?? null;
+            $provider = $this->providerEnum->get(strtolower($this->getDefault())) ?? null;
         }
 
         return $provider;
@@ -148,14 +156,14 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
      * @param IPaymentProvider $provider
      * @param string[]         $saveNames
      */
-    public static function register(IPaymentProvider $provider, array $saveNames = []) : void{
-        if(self::getDefault() === null){
-            self::setDefault($provider->getName());
+    public function register(IPaymentProvider $provider, array $saveNames = []) : void{
+        if($this->getDefault() === null){
+            $this->setDefault($provider->getName());
         }
 
-        self::$providerEnum->set(strtolower($provider->getName()), $provider);
+        $this->providerEnum->set(strtolower($provider->getName()), $provider);
         foreach($saveNames as $name){
-            self::$providerSaveNames[strtolower($name)] = $provider;
+            $this->providerSaveNames[strtolower($name)] = $provider;
         }
     }
 
@@ -164,38 +172,38 @@ class PaymentPool extends PluginBase implements TranslatorHolder{
      *
      * @return PluginInfo|null
      */
-    public static function getPluginInfo($plugin) : ?PluginInfo{
+    public function getPluginInfo($plugin) : ?PluginInfo{
         if($plugin instanceof Plugin){
             $plugin = $plugin->getName();
         }
 
-        return self::$pluginInfoEnum[$plugin] ?? null;
+        return $this->pluginInfoEnum[$plugin] ?? null;
     }
 
     /** @param Plugin|string $plugin */
-    public static function createPluginInfo($plugin) : void{
+    public function createPluginInfo($plugin) : void{
         if($plugin instanceof Plugin){
             $plugin = $plugin->getName();
         }
 
-        if(self::$pluginInfoEnum->has($plugin)){
-            self::$pluginInfoEnum->set($plugin, new PluginInfo($plugin, self::getDefault()));
+        if($this->pluginInfoEnum->has($plugin)){
+            $this->pluginInfoEnum->set($plugin, new PluginInfo($plugin, $this->getDefault()));
         }
     }
 
     /** @return PluginInfo[] */
-    public static function getPluginInfos() : array{
-        return self::$pluginInfoEnum->getAll();
+    public function getPluginInfos() : array{
+        return $this->pluginInfoEnum->getAll();
     }
 
     /** @return string|null */
-    public static function getDefault() : ?string{
-        $providers = self::getProviders();
-        return self::getPluginInfo(self::DEFAULT_NAME)->getDefault() ?? (empty($providers) ? null : array_key_first($providers));
+    public function getDefault() : ?string{
+        $providers = $this->getProviders();
+        return $this->getPluginInfo(self::DEFAULT_NAME)->getDefault() ?? (empty($providers) ? null : array_key_first($providers));
     }
 
     /** @param string|null $default */
-    public static function setDefault(?string $default) : void{
-        self::getPluginInfo(self::DEFAULT_NAME)->setDefault($default);
+    public function setDefault(?string $default) : void{
+        $this->getPluginInfo(self::DEFAULT_NAME)->setDefault($default);
     }
 }
