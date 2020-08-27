@@ -27,16 +27,16 @@ payment:
           name: "Payment"
         plugin:
           name: "Plugin"
-    links:
-      name: "Links"
-      aliases: ["l", "linklist"]
+    payments:
+      name: "Payments"
+      aliases: ["paymentlist", "list"]
       permission: "op"
       children:
         page:
           name: "Page"
-    list:
-      name: "List"
-      aliases: ["l"]
+    links:
+      name: "Links"
+      aliases: ["l", "linklist"]
       permission: "op"
       children:
         page:

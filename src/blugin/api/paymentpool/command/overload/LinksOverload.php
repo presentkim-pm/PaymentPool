@@ -37,7 +37,7 @@ use pocketmine\command\CommandSender;
 class LinksOverload extends NamedOverload implements ICommandHandler{
     public function __construct(BaseCommand $baseCommand){
         parent::__construct($baseCommand, "links");
-        $this->addParamater((new IntegerParameter("page"))->setMin(1)->setOptional(true));
+        $this->addParamater((new IntegerParameter("page"))->setMin(1)->setDefault(1)->setOptional(true));
         $this->setHandler($this);
     }
 

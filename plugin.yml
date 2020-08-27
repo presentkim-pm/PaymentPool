@@ -16,10 +16,10 @@ permissions:
       payment.cmd.set:
         description: PaymentPool command - set
         default: op
+      payment.cmd.payments:
+        description: PaymentPool command - payments
+        default: op
       payment.cmd.links:
         description: PaymentPool command - links
-        default: op
-      payment.cmd.list:
-        description: PaymentPool command - list
         default: op
 ...
