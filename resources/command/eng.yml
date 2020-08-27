@@ -27,9 +27,9 @@ payment:
           name: "Payment"
         plugin:
           name: "Plugin"
-    plugins:
-      name: "Plugins"
-      aliases: ["p", "pluginlist"]
+    links:
+      name: "Links"
+      aliases: ["l", "linklist"]
       permission: "op"
       children:
         page:
